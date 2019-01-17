@@ -10,7 +10,7 @@ def get_category():
     return [key['name'] for key in r.json().get('tags')]
     
 
-def get_ingredients(category, page, pays):
+def get_meal(category, page, pays):
     payload = {
                 'action': 'process',
                 'tagtype_0': 'categories',
@@ -62,5 +62,5 @@ def get_choice(category, n=5):
     return categories[choice-1]
 
 category = get_choice(get_category())
-products = get_ingredients(category, 1, 'France')
+products = get_meal(category, 1, 'France')
 display_infos(products)
