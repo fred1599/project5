@@ -1,20 +1,16 @@
 TABLES = {}
 
-TABLES['category'] = (
-    "CREATE TABLE IF NOT EXISTS `category` ("
-    "  `id` int(11) NOT NULL AUTO_INCREMENT,"
-    "  `name` varchar(100) NOT NULL,"
-    "  `meal` varchar(2000) NOT NULL,"
-    "  PRIMARY KEY (`id`)"
-    ") ENGINE=InnoDB")
+TABLES['category'] = """CREATE TABLE IF NOT EXISTS category(
+id INT PRIMARY KEY,
+name TEXT,
+meal TEXT)
+"""
 
-TABLES['meal'] = (
-    "CREATE TABLE IF NOT EXISTS `meal` ("
-    "  `id` int(11) NOT NULL AUTO_INCREMENT,"
-    "  `product` varchar(100) NOT NULL,"
-    "  `grade` varchar(1) NOT NULL,"
-    "  `ingredients` varchar(100) NOT NULL,"
-    "  `magasin` varchar(100) NOT NULL,"
-    "  `url` varchar(1000) NOT NULL,"
-    "  PRIMARY KEY (`id`)"
-    ") ENGINE=InnoDB")
+TABLES['meal'] = """CREATE TABLE IF NOT EXISTS meal(
+id INT PRIMARY KEY,
+product TEXT,
+grade TEXT,
+ingredients TEXT,
+magasin TEXT,
+url TEXT)
+"""
