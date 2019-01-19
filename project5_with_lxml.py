@@ -36,8 +36,7 @@ def get_properties(product, url):
     description = tree.xpath('//div[@property="food:ingredientListAsText"]/text()')
     if description:
         return '\n'.join(description)
-    else:
-        return ''
+    return ''
 
 
 def display_infos(products):
