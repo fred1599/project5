@@ -1,7 +1,7 @@
 import requests
 
 from random import choice, sample
-
+from lxml.html import fromstring
 
 
 def get_category():
@@ -28,27 +28,20 @@ def get_meal(category, page, pays):
     result = r.get('products')
     return result
 
-def display_infos(products):
-    properties = [
-            'product_name_fr',
-            'nutrition_grade_fr',
-            'ingredients_text_fr',
-            'stores',
-            'id',
-            'url',
-        ]
-
-    for property in products:
-        for name in properties:
-            if name in property:
-                print(property.get(name))
-        print('-' * 100)
+def get_products(infos):
+    return [(info.get('product_name_fr'), info.get('url')) \
+             for info in infos]
 
 
-def get_choice(category, n=5):
+def get_choice(category, n=5, product=False):
     categories = sample(category, n)
+    urls = []
+
     for ind, cat in enumerate(categories):
         try:
+            if product:
+                cat, url = cat
+                urls.append(url)
             print('{}: {}'.format(ind+1, cat))
         except UnicodeEncodeError:
             continue
@@ -59,8 +52,21 @@ def get_choice(category, n=5):
             break
         except ValueError:
             continue
+    if urls:
+        return categories[choice-1][0], urls[choice-1]
     return categories[choice-1]
 
-category = get_choice(get_category())
-products = get_meal(category, 1, 'France')
-display_infos(products)
+def parse_ingredients(url):
+    content = requests.get(url).text
+    page = fromstring(content)
+    result = page.xpath('//div[@id="ingredients_list"]/text()')[0]
+    return [ing for ing in result.split(',') if ing]
+
+if __name__ == "__main__":
+    categories = get_category()
+    category = get_choice(categories, 5)
+    infos = get_meal(category, 1, 'France')
+    products = get_products(infos)
+    product, url = get_choice(products, len(products), product=True)
+    print(url)
+    print(parse_ingredients(url))
