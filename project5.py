@@ -2,6 +2,7 @@ import requests
 
 from random import choice, sample
 from lxml.html import fromstring
+from string import punctuation
 
 
 def get_category():
@@ -49,6 +50,7 @@ def get_choice(category, n=5, product=False):
     while True:
         try:
             choice = int(input('Entrer votre choix: '))
+            print()
             break
         except ValueError:
             continue
@@ -59,8 +61,9 @@ def get_choice(category, n=5, product=False):
 def parse_ingredients(url):
     content = requests.get(url).text
     page = fromstring(content)
-    result = page.xpath('//div[@id="ingredients_list"]/text()')[0]
-    return [ing for ing in result.split(',') if ing]
+    result = page.xpath('//div[@id="ingredients_list"]/text()')
+    if result:
+        return [ing for ing in result[0].split(',') if ing]
 
 if __name__ == "__main__":
     categories = get_category()
@@ -69,4 +72,4 @@ if __name__ == "__main__":
     products = get_products(infos)
     product, url = get_choice(products, len(products), product=True)
     print(url)
-    print(parse_ingredients(url))
+    print([ing.strip(punctuation) for ing in parse_ingredients(url)])
