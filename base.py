@@ -1,5 +1,6 @@
 import getpass
 import mysql.connector
+import sys
 
 from mysql.connector import errorcode
 from tables import TABLES
@@ -25,6 +26,7 @@ class Base:
                 print("Database does not exist")
             else:
                 print(err)
+            sys.exit(-1)
         
     def create_tables(self, *tablenames):
         for table in tablenames:

@@ -1,75 +1,104 @@
 import requests
+import re
+import unidecode
 
-from random import choice, sample
+from random import sample
+from my_menu import Menus, Menu
 from lxml.html import fromstring
-from string import punctuation
 
+class Categories:
 
-def get_category():
-    http = "https://fr.openfoodfacts.org/categories&json=1"
-    r = requests.get(http)
-    return [key['name'] for key in r.json().get('tags')]
-    
+	URL = "https://fr.openfoodfacts.org/categories&json=1"
 
-def get_meal(category, page, pays):
-    payload = {
-                'action': 'process',
-                'tagtype_0': 'categories',
-                'tag_contains_0': 'contains',
-                'tag_0': category,
-                'sort_by': 'unique_scans_n',
-                'page_size': str(page),
-                'countries': pays,
-                'json': 1,
-                'page': 1,
-            }
+	def __init__(self):
+		self.r = self.connect()
+		self.list = self.get(self.r)
 
-    ingredients = requests.get('https://fr.openfoodfacts.org/cgi/search.pl', params=payload)
-    r = ingredients.json()
-    result = r.get('products')
-    return result
+	def connect(self):
+		r = requests.get(Categories.URL)
+		return r
 
-def get_products(infos):
-    return [(info.get('product_name_fr'), info.get('url')) \
-             for info in infos]
+	def get(self, r, limit=5):
+		categories = [key['name'] for key in r.json().get('tags')]
+		return sample(categories, limit)
 
+class Meals:
 
-def get_choice(category, n=5, product=False):
-    categories = sample(category, n)
-    urls = []
+	URL = 'https://fr.openfoodfacts.org/cgi/search.pl'
+	PAYLOAD = {
+		'action': 'process',
+        'tagtype_0': 'categories',
+        'tag_contains_0': 'contains',
+        'tag_0': None,
+        'sort_by': 'unique_scans_n',
+        'page_size': None,
+        'countries': None,
+        'json': 1,
+        'page': 1,
+	}
 
-    for ind, cat in enumerate(categories):
-        try:
-            if product:
-                cat, url = cat
-                urls.append(url)
-            print('{}: {}'.format(ind+1, cat))
-        except UnicodeEncodeError:
-            continue
+	def __init__(self, cat, page=1, pays='France'):
+		Meals.PAYLOAD['tag_0'] = cat
+		Meals.PAYLOAD['page_size'] = page
+		Meals.PAYLOAD['countries'] = pays
+		self.meals = self.connect()
+		self.pr, self.urls, self.brands = self.get_meal()
 
-    while True:
-        try:
-            choice = int(input('Entrer votre choix: '))
-            print()
-            break
-        except ValueError:
-            continue
-    if urls:
-        return categories[choice-1][0], urls[choice-1]
-    return categories[choice-1]
+	def connect(self):
+		r = requests.get(Meals.URL, params=Meals.PAYLOAD)
+		self.r_json = r.json()
+		return self.r_json
 
-def parse_ingredients(url):
-    content = requests.get(url).text
-    page = fromstring(content)
-    result = page.xpath('//div[@id="ingredients_list"]/text()')
-    if result:
-        return [ing for ing in result[0].split(',') if ing]
+	def get_meal(self):
+		result = self.meals.get('products')
+		infos = ('product_name_fr', 'url', 'brands')
+		meals = []
+		for info in infos:
+			meals.append([key[info] for key in result if info in key])
+		return meals
 
-if __name__ == "__main__":
-    categories = get_category()
-    category = get_choice(categories, 5)
-    infos = get_meal(category, 1, 'France')
-    products = get_products(infos)
-    product, url = get_choice(products, len(products), product=True)
-    print(url)
-    print([ing.strip(punctuation) for ing in parse_ingredients(url)])
+class Products:
+
+	def parse_ingredients(url):
+		content = requests.get(url).text
+		page = fromstring(content)
+		result = page.xpath('//div[@id="ingredients_list"]/text()')
+		if result:
+			products = ''.join(result)
+		else:
+			products = None
+		return products
+
+def get_res(objects, menus):
+	menu = Menu(objects)
+	menus = menus + menu
+	menu.display()
+	value = menu.get_value(menus)
+	print()
+	if isinstance(value, Menu):
+		new_menu = value
+		new_menu.display()
+		meals = Meals(new_menu.get_value(menus))
+		value = get_res(meals.pr, menus)
+	return value
+
+def display_result(pr, url, brand, ingredients):
+	print('produit: {}'.format(pr))
+	print()
+	print('url: {}'.format(url))
+	print()
+	print('brand: {}'.format(brand))
+	print()
+	print('ingredients:')
+	print()
+	print(ingredients)
+
+MENUS = Menus()
+categories = Categories()
+value = get_res(categories.list, MENUS)
+meals = Meals(value)
+value = get_res(meals.pr, MENUS)
+url = meals.urls[meals.pr.index(value)]
+brands = meals.brands[meals.pr.index(value)]
+products = Products.parse_ingredients(url)
+display_result(value, url, brands, products)
