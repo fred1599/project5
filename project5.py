@@ -1,10 +1,12 @@
 import requests
 import re
 import unidecode
+import json
 
 from random import sample
 from my_menu import Menus, Menu
 from lxml.html import fromstring
+from base import Base
 
 class Categories:
 
@@ -47,6 +49,7 @@ class Meals:
 	def connect(self):
 		r = requests.get(Meals.URL, params=Meals.PAYLOAD)
 		self.r_json = r.json()
+
 		return self.r_json
 
 	def get_meal(self):
@@ -93,12 +96,18 @@ def display_result(pr, url, brand, ingredients):
 	print()
 	print(ingredients)
 
+
+
+my_base = Base("my_base")
 MENUS = Menus()
 categories = Categories()
 value = get_res(categories.list, MENUS)
 meals = Meals(value)
+my_base.add_to_category((value,))
 value = get_res(meals.pr, MENUS)
 url = meals.urls[meals.pr.index(value)]
 brands = meals.brands[meals.pr.index(value)]
 products = Products.parse_ingredients(url)
 display_result(value, url, brands, products)
+my_base.add_to_products((value, url, products, brands,))
+my_base.cnx.close()

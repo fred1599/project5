@@ -11,7 +11,8 @@ class Base:
         self.user = input('Enter Username: ')
         self.password = getpass.getpass(prompt='Enter password: ')
         self.connect()
-        self.create_tables('category', 'meal')
+        self.create_tables('category', 'product')
+        self.id_cat = None
             
 
     def connect(self):
@@ -32,4 +33,17 @@ class Base:
         for table in tablenames:
             self.cursor.execute(TABLES[table])
 
-base = Base('my_base')
+    def add_to_category(self, value):
+        sql = """INSERT INTO category (name) VALUES (%s)"""
+        self.cursor.execute(sql, value)
+        self.cnx.commit()
+        self.id_cat = self.cursor.lastrowid
+
+    def add_to_products(self, values):
+        sql = """INSERT INTO product (id_cat, name, url, ingredients, magasin) 
+                VALUES ({}, %s, %s, %s, %s)""".\
+                format(self.id_cat)
+        self.cursor.execute(sql, values)
+        self.cnx.commit()
+
+
