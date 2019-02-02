@@ -52,3 +52,10 @@ class Base:
         for values in self.cursor.fetchall():
             if value in values:
                 return values
+
+    def get_all_products(self, table):
+        sql = """SELECT name FROM {}""".format(table)
+        self.cursor.execute(sql)
+        products_list = sorted(self.cursor.fetchall())
+        for ind, product in enumerate(products_list, start=1):
+            print("{}:\t{}".format(ind, product[0]))

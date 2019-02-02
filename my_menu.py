@@ -42,8 +42,8 @@ class Menu:
 
     def _get_choice(self):
         limit = len(self.content)
-        choice = input('Faîtes votre choix (z pour revenir): ')
-        if choice == 'z':
+        choice = input('Faîtes votre choix (r pour revenir): ')
+        if choice == 'r':
             return choice
         try:
             choice = int(choice)
@@ -55,7 +55,7 @@ class Menu:
 
     def get_value(self, menus):
         choice = self._get_choice()
-        if choice == 'z':
+        if choice == 'r':
             menu = menus.get_precedent()
             return menu
         return self.content[choice-1]

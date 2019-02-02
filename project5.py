@@ -168,3 +168,11 @@ if not products:
 results = (value, url, products, brands,)
 my_base.add_to_products(results)
 display_result(*results)
+
+print('Voici la liste des produits enregistrés:')
+print()
+my_base.get_all_products('product')
+print()
+print('Voici la liste des catégories enregistrés:')
+print()
+my_base.get_all_products('category')
