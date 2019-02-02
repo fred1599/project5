@@ -151,12 +151,20 @@ product = my_base.search_to_products(value)
 if product:
 	display_result(*product)
 	sys.exit() # on quitte le programme
-else:
-	print("Non trouvé dans la base de données")
-
-url = meals.urls[meals.pr.index(value)]
-brands = meals.brands[meals.pr.index(value)]
+print("Non trouvé dans la base de données")
+choice = input("Voulez-vous l'enregistrer dans la base (y/n): ")
+if choice.lower()[0] == 'y':
+	print("Enregistrement dans la base de données")
+	try:
+		url = meals.urls[meals.pr.index(value)]
+		brands = meals.brands[meals.pr.index(value)]
+	except IndexError:
+		print("url: {}".format(url))
+		print("brand: {}".format(brands))
+		sys.exit("Erreur d'index")
 products = Products.parse_ingredients(url)
-display_result(value, url, products, brands)
-print("Enregistrement dans la base de données")
-my_base.add_to_products((value, url, products, brands,))
+if not products:
+	products = ''
+results = (value, url, products, brands,)
+my_base.add_to_products(results)
+display_result(*results)
