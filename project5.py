@@ -1,7 +1,6 @@
 import requests
-import re
-import unidecode
 import json
+import sys
 
 from random import sample
 from my_menu import Menus, Menu
@@ -9,6 +8,10 @@ from lxml.html import fromstring
 from base import Base
 
 class Categories:
+
+	"""
+	:rtype: Categories
+	"""
 
 	URL = "https://fr.openfoodfacts.org/categories&json=1"
 
@@ -21,10 +24,23 @@ class Categories:
 		return r
 
 	def get(self, r, limit=5):
+		"""
+		:type r: Request
+		:type limit: int
+		:rtype: list
+		"""
 		categories = [key['name'] for key in r.json().get('tags')]
 		return sample(categories, limit)
 
 class Meals:
+
+	"""
+	get all products of category
+	:type cat: str
+	:type page: int
+	:type pays: str
+	:rtype: Meals
+	"""
 
 	URL = 'https://fr.openfoodfacts.org/cgi/search.pl'
 	PAYLOAD = {
@@ -63,6 +79,11 @@ class Meals:
 class Products:
 
 	def parse_ingredients(url):
+		"""
+		return all ingredients of product
+		:type url: str
+		:rtype: str
+		"""
 		content = requests.get(url).text
 		page = fromstring(content)
 		result = page.xpath('//div[@id="ingredients_list"]/text()')
@@ -73,6 +94,12 @@ class Products:
 		return products
 
 def get_res(objects, menus):
+	"""
+	if z key, return value for the new choice
+	:type objects: list
+	:type menus: Menu
+	:rtype: str or tuple
+	"""
 	menu = Menu(objects)
 	menus = menus + menu
 	menu.display()
@@ -83,9 +110,18 @@ def get_res(objects, menus):
 		new_menu.display()
 		meals = Meals(new_menu.get_value(menus))
 		value = get_res(meals.pr, menus)
+		return value, meals.pr
 	return value
 
-def display_result(pr, url, brand, ingredients):
+def display_result(pr, url, ingredients, brand):
+	"""
+	display results for research products
+	:type pr: str
+	:type url: str
+	:type brand: str
+	:type ingredients: str
+	:rtype: None
+	"""
 	print('produit: {}'.format(pr))
 	print()
 	print('url: {}'.format(url))
@@ -104,10 +140,23 @@ categories = Categories()
 value = get_res(categories.list, MENUS)
 meals = Meals(value)
 my_base.add_to_category((value,))
-value = get_res(meals.pr, MENUS)
+values = get_res(meals.pr, MENUS)
+
+if isinstance(values, tuple):
+	value, meals.pr = values
+else:
+	value = values
+
+product = my_base.search_to_products(value)
+if product:
+	display_result(*product)
+	sys.exit() # on quitte le programme
+else:
+	print("Non trouvé dans la base de données")
+
 url = meals.urls[meals.pr.index(value)]
 brands = meals.brands[meals.pr.index(value)]
 products = Products.parse_ingredients(url)
-display_result(value, url, brands, products)
+display_result(value, url, products, brands)
+print("Enregistrement dans la base de données")
 my_base.add_to_products((value, url, products, brands,))
-my_base.cnx.close()

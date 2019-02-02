@@ -46,4 +46,9 @@ class Base:
         self.cursor.execute(sql, values)
         self.cnx.commit()
 
-
+    def search_to_products(self, value):
+        sql = """SELECT name, url, ingredients, magasin FROM product"""
+        self.cursor.execute(sql)
+        for values in self.cursor.fetchall():
+            if value in values:
+                return values
