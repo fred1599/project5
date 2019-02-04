@@ -1,178 +1,171 @@
 import requests
-import json
 import sys
 
-from random import sample
-from my_menu import Menus, Menu
+from random import sample, choice
 from lxml.html import fromstring
+from my_menu import Menu
 from base import Base
 
-class Categories:
 
-	"""
-	:rtype: Categories
-	"""
+class Categorie:
 
-	URL = "https://fr.openfoodfacts.org/categories&json=1"
+    def __init__(self, name):
+        self.nom = name
+        self.pays = 'France'
+        self.url = ''
+        self.nb_produits = 0
 
-	def __init__(self):
-		self.r = self.connect()
-		self.list = self.get(self.r)
+    def __str__(self):
+        return self.nom
 
-	def connect(self):
-		r = requests.get(Categories.URL)
-		return r
+class Categories(list):
 
-	def get(self, r, limit=5):
-		"""
-		:type r: Request
-		:type limit: int
-		:rtype: list
-		"""
-		categories = [key['name'] for key in r.json().get('tags')]
-		return sample(categories, limit)
+    URL = "https://fr.openfoodfacts.org/categories&json=1"
 
-class Meals:
+    def __init__(self):
+        super().__init__()
+        self.load()
 
-	"""
-	get all products of category
-	:type cat: str
-	:type page: int
-	:type pays: str
-	:rtype: Meals
-	"""
+    def load(self):
+        r = requests.get(Categories.URL)
+        for key in r.json().get('tags'):
+            categorie = Categorie(key['name'])
+            self.append(categorie)
 
-	URL = 'https://fr.openfoodfacts.org/cgi/search.pl'
-	PAYLOAD = {
-		'action': 'process',
+    def get_categories(self, n):
+        if n < 1 or n > len(self):
+            n = 5
+
+        return sorted(sample(self, n), key=lambda cat: cat.nom)
+
+    def get_names(self, n):
+        return [cat.nom for cat in self.get_categories(n)]
+
+class Products(list):
+
+    URL = 'https://fr.openfoodfacts.org/cgi/search.pl'
+    PAYLOAD = {
+        'action': 'process',
         'tagtype_0': 'categories',
         'tag_contains_0': 'contains',
         'tag_0': None,
         'sort_by': 'unique_scans_n',
-        'page_size': None,
-        'countries': None,
+        'page_size': 1,
+        'countries': 'France',
         'json': 1,
         'page': 1,
-	}
+    }
 
-	def __init__(self, cat, page=1, pays='France'):
-		Meals.PAYLOAD['tag_0'] = cat
-		Meals.PAYLOAD['page_size'] = page
-		Meals.PAYLOAD['countries'] = pays
-		self.meals = self.connect()
-		self.pr, self.urls, self.brands = self.get_meal()
+    def __init__(self, categorie):
+        super().__init__()
+        Products.PAYLOAD['tag_0'] = categorie
+        self.load()
 
-	def connect(self):
-		r = requests.get(Meals.URL, params=Meals.PAYLOAD)
-		self.r_json = r.json()
+    def load(self):
+        r = requests.get(Products.URL, params=Products.PAYLOAD)
+        for product in r.json().get('products'):
+            self.append(product)
 
-		return self.r_json
+    def get_info(self, info):
+        infos = []
+        for product in self:
+            if info in product:
+                infos.append(product[info])
+        return infos     
 
-	def get_meal(self):
-		result = self.meals.get('products')
-		infos = ('product_name_fr', 'url', 'brands')
-		meals = []
-		for info in infos:
-			meals.append([key[info] for key in result if info in key])
-		return meals
 
-class Products:
+class Ingredients(str):
 
-	def parse_ingredients(url):
-		"""
-		return all ingredients of product
-		:type url: str
-		:rtype: str
-		"""
-		content = requests.get(url).text
-		page = fromstring(content)
-		result = page.xpath('//div[@id="ingredients_list"]/text()')
-		if result:
-			products = ''.join(result)
-		else:
-			products = None
-		return products
+    PATH = '//div[@id="ingredients_list"]/text()'
 
-def get_res(objects, menus):
-	"""
-	if z key, return value for the new choice
-	:type objects: list
-	:type menus: Menu
-	:rtype: str or tuple
-	"""
-	menu = Menu(objects)
-	menus = menus + menu
-	menu.display()
-	value = menu.get_value(menus)
-	print()
-	if isinstance(value, Menu):
-		new_menu = value
-		new_menu.display()
-		meals = Meals(new_menu.get_value(menus))
-		value = get_res(meals.pr, menus)
-		return value, meals.pr
-	return value
+    def __init__(self, url):
+        super().__init__()
+        self.url = url
 
-def display_result(pr, url, ingredients, brand):
-	"""
-	display results for research products
-	:type pr: str
-	:type url: str
-	:type brand: str
-	:type ingredients: str
-	:rtype: None
-	"""
-	print('produit: {}'.format(pr))
-	print()
-	print('url: {}'.format(url))
-	print()
-	print('brand: {}'.format(brand))
-	print()
-	print('ingredients:')
-	print()
-	print(ingredients)
+    def load(self):
+        content = requests.get(self.url).text
+        page = fromstring(content)
+        result = page.xpath(Ingredients.PATH)
+        products = ''
+        if result:
+            products = ''.join(result)
+        return products
+
+    def __str__(self):
+        return self.load()
+
+
+def display_info(products, names, product):
+    index = names.index(product)
+    url_produit = products.get_info('url')[index]
+    magasin_produit = products.get_info('brands')[index]
+    ingredients_produit = Ingredients(url_produit)
+    print('\n'.join([
+        'nom du produit: {}'.format(product),
+        'magasin du produit: {}'.format(magasin_produit),
+        'URL du produit: {}'.format(url_produit),
+        'ingrédients du produit: \n\n{}'.format(ingredients_produit),
+    ]))
 
 
 
-my_base = Base("my_base")
-MENUS = Menus()
-categories = Categories()
-value = get_res(categories.list, MENUS)
-meals = Meals(value)
-my_base.add_to_category((value,))
-values = get_res(meals.pr, MENUS)
+MENU = Menu()
+categories = Categories().get_names(5) # chargement de la liste des catégories existantes
+menu_cat = MENU.add(categories)
 
-if isinstance(values, tuple):
-	value, meals.pr = values
-else:
-	value = values
+try:
+    base_name = sys.argv[1]
+except IndexError:
+    base_name = 'my_base'
 
-product = my_base.search_to_products(value)
-if product:
-	display_result(*product)
-	sys.exit() # on quitte le programme
-print("Non trouvé dans la base de données")
-choice = input("Voulez-vous l'enregistrer dans la base (y/n): ")
-if choice.lower()[0] == 'y':
-	print("Enregistrement dans la base de données")
-	try:
-		url = meals.urls[meals.pr.index(value)]
-		brands = meals.brands[meals.pr.index(value)]
-	except IndexError:
-		print("url: {}".format(url))
-		print("brand: {}".format(brands))
-		sys.exit("Erreur d'index")
-products = Products.parse_ingredients(url)
-if not products:
-	products = ''
-results = (value, url, products, brands,)
-my_base.add_to_products(results)
-display_result(*results)
+base = Base(base_name)
 
-print('Voici la liste des produits enregistrés:')
-print()
-my_base.get_all_products('product')
-print()
-print('Voici la liste des catégories enregistrés:')
-print()
-my_base.get_all_products('category')
+while True:
+    MENU.display()
+    index = MENU.get_choice()
+
+    if index == None:
+        continue
+
+    cat = categories[index]
+
+    if not base.in_categories(cat):
+        print('La catégorie {} est inconnu dans la base de données'.
+            format(cat)
+        )
+        choice = input("Voulez-vous enregistrer dans la base de données (y/n): ")
+        if choice == 'y':
+            base.add_to_category((cat,))
+
+    products = Products(cat)
+    names = products.get_info('product_name_fr')
+    menu_product = MENU.add(names)
+    MENU.display()
+    index = MENU.get_choice()
+
+    if index == None:
+        continue
+
+    product = names[index]
+
+    if not base.search_to_products(product):
+        print('Le produit {} est inconnu dans la base de données'.
+            format(product)
+        )
+        choice = input("Voulez-vous enregistrer dans la base de données (y/n): ")
+        if choice == 'y':
+            url_produit = products.get_info('url')[index]
+            magasin_produit = products.get_info('brands')[index]
+            ingredients_produit = Ingredients(url_produit)
+            values = (
+                product,
+                url_produit,
+                str(ingredients_produit),
+                magasin_produit
+            )
+            base.add_to_products(tuple(values))
+
+    break
+
+print('\n\n')
+display_info(products, names, product)

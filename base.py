@@ -53,6 +53,11 @@ class Base:
             if value in values:
                 return values
 
+    def in_categories(self, value):
+        sql = """SELECT name FROM category"""
+        self.cursor.execute(sql)
+        return value in self.cursor.fetchall()
+
     def get_all_products(self, table):
         sql = """SELECT name FROM {}""".format(table)
         self.cursor.execute(sql)
