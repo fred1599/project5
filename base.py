@@ -33,34 +33,59 @@ class Base:
         for table in tablenames:
             self.cursor.execute(TABLES[table])
 
-    def add_to_category(self, value):
-        sql = """INSERT INTO category (name) VALUES (%s)"""
-        self.cursor.execute(sql, value)
+    def add(self, table, *values):
+        if table not in ('category', 'product'):
+            raise TypeError('Erreur sur le nom de la table: {}'.format(table))
+
+        if table == 'category':
+            sql = """INSERT INTO category (name) VALUES (%s)"""
+
+            index_max = len(values)-1
+            if index_max == 0:
+                values = values[0]
+                self.cursor.execute(sql, (values,))
+            else:
+                raise ValueError("Erreur, trop d'infos à insérer")
+        else:
+            sql = """INSERT INTO product (id_cat, name, url, ingredients, magasin)\
+            VALUES {}""".format(values)
+            
+            self.cursor.execute(sql)
+
+        
         self.cnx.commit()
-        self.id_cat = self.cursor.lastrowid
 
-    def add_to_products(self, values):
-        sql = """INSERT INTO product (id_cat, name, url, ingredients, magasin) 
-                VALUES ({}, %s, %s, %s, %s)""".\
-                format(self.id_cat)
-        self.cursor.execute(sql, values)
-        self.cnx.commit()
+    def contains(self, table, value):
+        if table in ('category', 'product'):
+            sql = """SELECT name FROM {} where name=%s""".format(table)
+            self.cursor.execute(sql, (value,))
+            result = self.cursor.fetchall()
+            if result:
+                return True
+        else:
+            print("table {} non présente dans la base".format(table))
+        return False
 
-    def search_to_products(self, value):
-        sql = """SELECT name, url, ingredients, magasin FROM product"""
-        self.cursor.execute(sql)
-        for values in self.cursor.fetchall():
-            if value in values:
-                return values
+    def get_id(self, table, object):
 
-    def in_categories(self, value):
-        sql = """SELECT name FROM category"""
-        self.cursor.execute(sql)
-        return value in self.cursor.fetchall()
+        sql = """SELECT id_category FROM {} WHERE name=%s""".format(table)
 
-    def get_all_products(self, table):
-        sql = """SELECT name FROM {}""".format(table)
-        self.cursor.execute(sql)
-        products_list = sorted(self.cursor.fetchall())
-        for ind, product in enumerate(products_list, start=1):
-            print("{}:\t{}".format(ind, product[0]))
+        self.cursor.execute(sql, (object,))
+        result = self.cursor.fetchone()
+        if result:
+            my_id = result[0]
+        else:
+            my_id = None
+        return my_id
+
+    def get_infos(self, table, product):
+        if table not in ('category', 'product'):
+            raise TypeError("table vaut category ou product")
+
+        if table == 'category':
+            raise NotImplementedError('research in table category not implemented')
+
+        sql = """SELECT name, url, ingredients, magasin FROM product WHERE name=%s"""
+        self.cursor.execute(sql, (product,))
+        result = self.cursor.fetchone()
+        return result

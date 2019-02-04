@@ -95,23 +95,15 @@ class Ingredients(str):
         return self.load()
 
 
-def display_info(products, names, product):
-    index = names.index(product)
-    url_produit = products.get_info('url')[index]
-    magasin_produit = products.get_info('brands')[index]
-    ingredients_produit = Ingredients(url_produit)
+def display_info(product, url, ingredients, brand):
     print('\n'.join([
         'nom du produit: {}'.format(product),
-        'magasin du produit: {}'.format(magasin_produit),
-        'URL du produit: {}'.format(url_produit),
-        'ingrédients du produit: \n\n{}'.format(ingredients_produit),
+        'magasin du produit: {}'.format(brand),
+        'URL du produit: {}'.format(url),
+        'ingrédients du produit: \n\n{}'.format(ingredients),
     ]))
 
 
-
-MENU = Menu()
-categories = Categories().get_names(5) # chargement de la liste des catégories existantes
-menu_cat = MENU.add(categories)
 
 try:
     base_name = sys.argv[1]
@@ -120,52 +112,56 @@ except IndexError:
 
 base = Base(base_name)
 
-while True:
-    MENU.display()
-    index = MENU.get_choice()
+MENU = Menu()
+categories = Categories().get_names(5) # chargement de la liste des catégories existantes
+menu_cat = MENU.add(categories)
 
-    if index == None:
+while True:
+    MENU.display() # affiche le menu courant
+    index = MENU.get_choice() # index de la catégorie choisie
+
+    if index == None: # si mauvais choix d'index, on recommence
         continue
 
-    cat = categories[index]
+    cat = categories[index] # nom de la catégorie
 
-    if not base.in_categories(cat):
-        print('La catégorie {} est inconnu dans la base de données'.
-            format(cat)
-        )
-        choice = input("Voulez-vous enregistrer dans la base de données (y/n): ")
-        if choice == 'y':
-            base.add_to_category((cat,))
+    # Si catégorie non présente dans la base, on l'ajoute ou non
+    if not base.contains('category', cat):
+    	choice = input("Voulez-vous enregistrer dans la base de données (y/n): ")
+    	if choice == 'y':
+    		base.add('category', cat)
+    
+    id_cat = base.get_id('category', cat)
 
     products = Products(cat)
     names = products.get_info('product_name_fr')
-    menu_product = MENU.add(names)
-    MENU.display()
-    index = MENU.get_choice()
+    menu_product = MENU.add(names) # Ajout du menu
+    MENU.display() # affichage du menu des noms de produits
+    index = MENU.get_choice() # index du produit choisi
 
     if index == None:
         continue
 
-    product = names[index]
-
-    if not base.search_to_products(product):
-        print('Le produit {} est inconnu dans la base de données'.
-            format(product)
-        )
-        choice = input("Voulez-vous enregistrer dans la base de données (y/n): ")
-        if choice == 'y':
-            url_produit = products.get_info('url')[index]
-            magasin_produit = products.get_info('brands')[index]
-            ingredients_produit = Ingredients(url_produit)
-            values = (
-                product,
-                url_produit,
-                str(ingredients_produit),
-                magasin_produit
-            )
-            base.add_to_products(tuple(values))
+    product = names[index] # nom du produit choisi
+    url_produit = products.get_info('url')[index]
+    magasin_produit = products.get_info('brands')[index]
+    ingredients_produit = Ingredients(url_produit)
+    if not base.contains('product', product):
+    	choice = input("Voulez-vous enregistrer dans la base de données (y/n): ")
+    	if choice == 'y':
+    		base.add(
+    			'product',
+    			id_cat, product,
+    			url_produit, ingredients_produit,
+    			magasin_produit
+    		)
+    
+    else:
+    	values = base.get_infos('product', product)
+    	display_info(*values)
+    	sys.exit()
 
     break
 
 print('\n\n')
-display_info(products, names, product)
+display_info(product, url_produit, ingredients_produit, magasin_produit)
