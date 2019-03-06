@@ -127,9 +127,9 @@ while True:
 
     # Si catégorie non présente dans la base, on l'ajoute ou non
     if not base.contains('category', cat):
-    	choice = input("Voulez-vous enregistrer dans la base de données (y/n): ")
-    	if choice == 'y':
-    		base.add('category', cat)
+        choice = input("Voulez-vous enregistrer dans la base de données (y/n): ")
+        if choice == 'y':
+            base.add('category', cat)
     
     id_cat = base.get_id('category', cat)
 
@@ -146,20 +146,28 @@ while True:
     url_produit = products.get_info('url')[index]
     magasin_produit = products.get_info('brands')[index]
     ingredients_produit = Ingredients(url_produit)
+    
     if not base.contains('product', product):
-    	choice = input("Voulez-vous enregistrer dans la base de données (y/n): ")
-    	if choice == 'y':
-    		base.add(
-    			'product',
-    			id_cat, product,
-    			url_produit, ingredients_produit,
-    			magasin_produit
-    		)
+        choice = input("Voulez-vous substituer le produit ? (y/n): ")
+        if choice == 'y':
+            base.add(
+                'favorites',
+                id_cat, product,
+                url_produit, ingredients_produit,
+                magasin_produit
+            )
+        else:
+            base.add(
+                'product',
+                id_cat, product,
+                url_produit, ingredients_produit,
+                magasin_produit
+            )
     
     else:
-    	values = base.get_infos('product', product)
-    	display_info(*values)
-    	sys.exit()
+        values = base.get_infos('product', product)
+        display_info(*values)
+        sys.exit()
 
     break
 

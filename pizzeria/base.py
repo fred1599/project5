@@ -11,7 +11,7 @@ class Base:
         self.user = input('Enter Username: ')
         self.password = getpass.getpass(prompt='Enter password: ')
         self.connect()
-        self.create_tables('category', 'product')
+        self.create_tables('category', 'product', 'favorites')
         self.id_cat = None
             
 
@@ -34,7 +34,7 @@ class Base:
             self.cursor.execute(TABLES[table])
 
     def add(self, table, *values):
-        if table not in ('category', 'product'):
+        if table not in ('category', 'product', 'favorites'):
             raise TypeError('Erreur sur le nom de la table: {}'.format(table))
 
         if table == 'category':
@@ -46,6 +46,13 @@ class Base:
                 self.cursor.execute(sql, (values,))
             else:
                 raise ValueError("Erreur, trop d'infos à insérer")
+        
+        elif table == 'favorites':
+            sql = """INSERT INTO favorites (id_cat, name, url, ingredients, magasin)\
+            VALUES {}""".format(values)
+            
+            self.cursor.execute(sql)
+        
         else:
             sql = """INSERT INTO product (id_cat, name, url, ingredients, magasin)\
             VALUES {}""".format(values)
@@ -56,7 +63,7 @@ class Base:
         self.cnx.commit()
 
     def contains(self, table, value):
-        if table in ('category', 'product'):
+        if table in ('category', 'product', 'favorites'):
             sql = """SELECT name FROM {} where name=%s""".format(table)
             self.cursor.execute(sql, (value,))
             result = self.cursor.fetchall()
