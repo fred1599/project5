@@ -145,9 +145,11 @@ while True:
     product = names[index] # nom du produit choisi
     url_produit = products.get_info('url')[index]
     magasin_produit = products.get_info('brands')[index]
-    ingredients_produit = Ingredients(url_produit)
+    ingredients_produit = str(Ingredients(url_produit))
     
-    if not base.contains('product', product):
+    if not base.contains('favorites', product):
+        display_info(product, url_produit, ingredients_produit, magasin_produit)
+        
         choice = input("Voulez-vous substituer le produit ? (y/n): ")
         if choice == 'y':
             base.add(
@@ -156,6 +158,7 @@ while True:
                 url_produit, ingredients_produit,
                 magasin_produit
             )
+            sys.exit()
         else:
             base.add(
                 'product',
@@ -163,9 +166,10 @@ while True:
                 url_produit, ingredients_produit,
                 magasin_produit
             )
+            sys.exit()
     
     else:
-        values = base.get_infos('product', product)
+        values = base.get_infos('favorites', product)
         display_info(*values)
         sys.exit()
 

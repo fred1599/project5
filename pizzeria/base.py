@@ -86,7 +86,7 @@ class Base:
         return my_id
 
     def get_infos(self, table, product):
-        if table not in ('category', 'product'):
+        if table not in ('category', 'product', 'favorites'):
             raise TypeError("table vaut category ou product")
 
         if table == 'category':
