@@ -111,7 +111,7 @@ if c == 1:
             bdd.add_favorites(product, cat_name)
             print('{} saved !!!'.format(product))
 elif c == 2:
-    fav = bdd.get_all_favorites()
+    fav = list(set(bdd.get_all_favorites()))
     names = [favorite[2] for favorite in fav]
     c = get_choice(names)
     name, url, ingredients, brands, grade = fav[c-1][2:]
