@@ -106,10 +106,10 @@ if c == 1:
         name, url, ingredients, brands, grade = bdd.get_info_product(product)[2:]
         print('Name of product: {}\nURL: {}\nIngredients: {}\nBrands: {}\nGrade: {}'\
                   .format(name, url, ingredients, brands, grade))
-        c = input('Save product ? (yes/no): ')
-        if c == 'yes':
-            bdd.add_favorites(product, cat_name)
-            print('{} saved !!!'.format(product))
+    c = input('Save product ? (yes/no): ')
+    if c == 'yes':
+        bdd.add_favorites(product, cat_name)
+        print('{} saved !!!'.format(product))
 elif c == 2:
     fav = list(set(bdd.get_all_favorites()))
     names = [favorite[2] for favorite in fav]
