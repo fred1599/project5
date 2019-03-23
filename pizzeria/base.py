@@ -3,12 +3,13 @@ import mysql.connector
 from mysql.connector import errorcode
 from random import sample
 from tables import TABLES
+import getpass
 
 class Base:
     def __init__(self, name='my_base'):
         self.name = name
-        self.user = 'fred1599'
-        self.password = 'pablouche87'
+        self.user = getpass.getuser()
+        self.password = getpass.getpass(prompt='password: ')
     
     def connect(self):
         try:
