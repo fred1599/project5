@@ -23,3 +23,8 @@ Recherche d'aliments dans la base Open Food Facts.
 L'utilisateur interagit avec le programme dans le terminal.
 Si l'utilisateur entre un caractère qui n'est pas un chiffre, le programme répète la question,
 La recherche s'effectue sur une base MySql.
+
+Installation
+------------
+
+pip install -r requirements.txt
